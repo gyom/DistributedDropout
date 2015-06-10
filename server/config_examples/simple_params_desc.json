@@ -1,0 +1,123 @@
+[
+    {"name" : "layer_0_W",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [128, 3, 3, 3]},
+    {"name" : "layer_0_W_momentum",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [128, 3, 3, 3]},
+
+    {"name" : "layer_0_b",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [128, 1, 30, 30]},
+    {"name" : "layer_0_b_momentum",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [128, 1, 30, 30]},
+
+    {"name" : "layer_1_W",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [128, 128, 3, 3]},
+    {"name" : "layer_1_W_momentum",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [128, 128, 3, 3]},
+
+
+    {"name" : "layer_1_b",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [128, 1, 28, 28]},
+    {"name" : "layer_1_b_momentum",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [128, 1, 28, 28]},
+
+
+    {"name" : "layer_2_W",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [128, 128, 3, 3]},
+    {"name" : "layer_2_W_momentum",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [128, 128, 3, 3]},
+
+
+    {"name" : "layer_2_b",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [128, 1, 26, 26]},
+    {"name" : "layer_2_b_momentum",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [128, 1, 26, 26]},
+
+    {"name" : "layer_3_W",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [64, 128, 2, 2]},
+    {"name" : "layer_3_W_momentum",
+     "kind" : "CONV_FILTER_WEIGHTS",
+     "shape" : [64, 128, 2, 2]},
+
+
+    {"name" : "layer_3_b",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [64, 1, 12, 12]},
+    {"name" : "layer_3_b_momentum",
+     "kind" : "CONV_FILTER_BIASES",
+     "shape" : [64, 1, 12, 12]},
+
+
+
+
+    {"name" : "layer_4_W",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [2304, 1024, 1, 1]},
+    {"name" : "layer_4_W_momentum",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [2304, 1024, 1, 1]},
+
+    {"name" : "layer_4_b",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 1024, 1, 1]},
+    {"name" : "layer_4_b_momentum",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 1024, 1, 1]},
+
+
+    {"name" : "layer_5_W",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [1024, 512, 1, 1]},
+    {"name" : "layer_5_W_momentum",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [1024, 512, 1, 1]},
+
+    {"name" : "layer_5_b",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 512, 1, 1]},
+    {"name" : "layer_5_b_momentum",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 512, 1, 1]},
+
+
+    {"name" : "layer_6_W",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [512, 512, 1, 1]},
+    {"name" : "layer_6_W_momentum",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [512, 512, 1, 1]},
+
+    {"name" : "layer_6_b",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 512, 1, 1]},
+    {"name" : "layer_6_b_momentum",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 512, 1, 1]},
+
+
+    {"name" : "layer_7_W",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [512, 10, 1, 1]},
+    {"name" : "layer_7_W_momentum",
+     "kind" : "FULLY_CONNECTED_WEIGHTS",
+     "shape" : [512, 10, 1, 1]},
+
+    {"name" : "layer_7_b",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 10, 1, 1]},
+    {"name" : "layer_7_b_momentum",
+     "kind" : "FULLY_CONNECTED_BIASES",
+     "shape" : [1, 10, 1, 1]}     
+]
