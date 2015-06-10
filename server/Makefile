@@ -72,7 +72,7 @@ LINKING_FLAGS = -L${EXTRA_LIB_PATH_JANSSON} -L${EXTRA_LIB_PATH_HDF5}  -lm -lpthr
 all: main
 
 clean:
-	rm -v *.o *.so; rm ./main 
+	rm -v *.o *.so; rm ../bin/server 
 
 common.o: common.c
 	$(CC) $(CFLAGS) $(EXTERNAL_LIB_INCLUDE_STUFF) -c -o common.o common.c
@@ -93,4 +93,6 @@ main.o:	main.c common.h handler.h params.h server_handler.h
 	$(CC) $(CFLAGS) $(EXTERNAL_LIB_INCLUDE_STUFF) -c -o main.o main.c
 
 main: main.o common.o handler.o params.o server_handler.o server_hdf5_io.o
-	$(CC) $(CFLAGS) $(EXTERNAL_LIB_INCLUDE_STUFF) main.o server_handler.o server_hdf5_io.o handler.o params.o common.o -o main $(LINKING_FLAGS) `pkg-config --cflags --libs glib-2.0` -Wl,-rpath,$(EXTRA_LIB_PATH_HDF5)
+	$(CC) $(CFLAGS) $(EXTERNAL_LIB_INCLUDE_STUFF) main.o server_handler.o server_hdf5_io.o handler.o params.o common.o -o ../bin/server $(LINKING_FLAGS) `pkg-config --cflags --libs glib-2.0` -Wl,-rpath,$(EXTRA_LIB_PATH_HDF5)
+
+
