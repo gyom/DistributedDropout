@@ -14,8 +14,12 @@ ifeq ($(COMPILING_LOCATION),umontreal)
 export EXTRA_INCLUDE_PATH=/usr/include/
 # for jansson and hdf5
 export EXTRA_LIB_PATH_JANSSON=umontreal_dependencies/jansson/lib
-export EXTRA_LIB_PATH_HDF5=umontreal_dependencies/hdf5/lib
-export C_INCLUDE_PATH=umontreal_dependencies/jansson/include:umontreal_dependencies/hdf5/include
+
+#export EXTRA_LIB_PATH_HDF5=umontreal_dependencies/hdf5/lib
+export EXTRA_LIB_PATH_HDF5=/usr/lib64/libhdf5.so.6.0.4
+# /usr/lib64/libhdf5.so.6.0.4
+
+export C_INCLUDE_PATH=umontreal_dependencies/jansson/include:/usr/include
 
 # not tested
 #export GLIB=/usr/lib64
