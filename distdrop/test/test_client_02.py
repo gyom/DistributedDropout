@@ -2,12 +2,8 @@
 
 import numpy as np
 
-#import client_api
-from client_api import ClientCNNAutoSplitter
-import messages
-
-
-
+from distdrop.client.client_api import ClientCNNAutoSplitter
+from distdrop.client import messages
 
 
 def mini_training(client):

@@ -1,5 +1,3 @@
-
-
 import numpy as np
 import re
 
@@ -30,23 +28,30 @@ def build_hierarchy(list_of_params):
     # and it should contain a tuple of two real numbers
     # like (0.0, 0.5)
 
+
     def analyze_param_name(name):
-        prog = re.compile(r"(layer_(\d+))_(.*)")
-        m = prog.match(name)
+        prog = re.compile(r"(layer_(\d+))_([^_]*)(_(.*)){0,1}")
+        m = prog.match(s)
         if m:
-            return (m.group(1), int(m.group(2)), m.group(3))
+            layer_name = m.group(1)
+            layer_number = int(m.group(2))
+            role = m.group(3)
+            param_extra = m.group(5)
+            return (layer_name, layer_number, role, param_extra)
         else:
             print "Failed to get layer number from %d." % name
             return None
-
 
     layers = set()
     shapes = {}
     dropout_probs = {}
     rough_kinds = {}
+    L_extra = []
+
     for param_desc in list_of_params :
 
-        (layer_name, layer_number, role) = analyze_param_name(param_desc["name"])
+        (layer_name, layer_number, role, param_extra) = analyze_param_name(param_desc["name"])
+        #(layer_name, layer_number, role) = analyze_param_name(param_desc["name"])
         #print "parsed (%s, %d, %s)" % (layer_name, layer_number, role)
 
         # sanity check. if the user supplied the layer number
@@ -70,9 +75,13 @@ def build_hierarchy(list_of_params):
         if layer_name not in shapes.keys():
             shapes[layer_name] = {}
 
+        if param_extra not in L_extra:
+            L_extra.append(param_extra)
+
+        """
         assert role in ["W", "W_momentum", "b", "b_momentum"]
         shapes[layer_name][role] = param_desc["shape"]
-
+        """
     
     full_dict = {}
     full_dict["nbr_layers"] = len(layers)
@@ -81,7 +90,8 @@ def build_hierarchy(list_of_params):
     full_dict["dropout_probs"] = dropout_probs
     full_dict["rough_kinds"] = rough_kinds
 
-    return full_dict
+
+    return full_dict, L_extra
 
 
 def build_dropout(shape, dropout_probs):
@@ -109,8 +119,8 @@ def build_dropout(shape, dropout_probs):
 
     return [index_row, index_col]
 
-
-def build_dropout_priv(nbr_layers, shapes, rough_kinds, dropout_probs):
+# TO DO add extra to filter the parameters
+def build_dropout_priv(nbr_layers, shapes, rough_kinds, dropout_probs, L_extra):
     dict_index={}
 
     for index in xrange(nbr_layers):
@@ -156,7 +166,10 @@ def build_dropout_priv(nbr_layers, shapes, rough_kinds, dropout_probs):
         name_layer = "layer_"+str(index)
         name_param = "layer_"+str(index)+"_"
         dict_param[name_param+"W"] = dict_index[name_layer]
-        dict_param[name_param+"W_momentum"] = dict_index[name_layer]
+
+        # HERE : not just momentum find every key of the tollowing form name_param+"W_*"
+        for extra in L_extra:
+            dict_param[name_param+"W_"+extra] = dict_index[name_layer]
 
         # the original version that returned only one set of indices for biases
         #if kinds[name_layer] == "FULLY_CONNECTED":
@@ -169,20 +182,25 @@ def build_dropout_priv(nbr_layers, shapes, rough_kinds, dropout_probs):
         just_the_zero_index = np.array([0], dtype=np.intc)
         if rough_kinds[name_layer] == "FULLY_CONNECTED":
             dict_param[name_param+"b"] = [just_the_zero_index, dict_index[name_layer][1]]
-            dict_param[name_param+"b_momentum"] = [just_the_zero_index, dict_index[name_layer][1]]
+            # HERE : not just momentum find every key of the tollowing form name_param+"b_*"
+            for extra in L_extra:
+                dict_param[name_param+"b_"+extra] = [just_the_zero_index, dict_index[name_layer][1]]
         else:
             dict_param[name_param+"b"] = [dict_index[name_layer][0], just_the_zero_index]
-            dict_param[name_param+"b_momentum"] = [dict_index[name_layer][0], just_the_zero_index]
+            # HERE : not just momentum find every key of the tollowing form name_param+"b_*"
+            for extra in L_extra:
+                dict_param[name_param+"b_"+extra] = [dict_index[name_layer][0], just_the_zero_index]
         
 
     return dict_param
 
-def build_dropout_index(dict_params):
+def build_dropout_index(dict_params, L_extra):
 
     return build_dropout_priv(nbr_layers=dict_params["nbr_layers"],
                               shapes=dict_params["shapes"],
                               rough_kinds=dict_params["rough_kinds"],
-                              dropout_probs=dict_params["dropout_probs"])
+                              dropout_probs=dict_params["dropout_probs"],
+                              L_extra=L_extra)
 
 
 if __name__ == '__main__':
@@ -191,6 +209,5 @@ if __name__ == '__main__':
 
     path = "melanie_mnist_params_desc_02.json"
     D = load_params_json_from_client(path)
-    dict_params = build_hierarchy(D)
-    print build_dropout_index(dict_params)
-
+    dict_params, L_extra = build_hierarchy(D)
+    print build_dropout_index(dict_params, L_extra)

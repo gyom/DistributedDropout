@@ -2,9 +2,11 @@
 
 import numpy as np
 
-#import client_api
-from client_api import Client
-import messages
+import distdrop
+import distdrop.client
+
+from distdrop.client.client_api import Client
+from distdrop.client import messages
 
 
 def test_slice(client):

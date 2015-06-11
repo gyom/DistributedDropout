@@ -7,7 +7,8 @@ import time
 import numpy as np
 import numpy.testing as npt
 
-from client_api import ClientCNNAutoSplitter
+from distdrop.client.client_api import ClientCNNAutoSplitter
+#from distdrop.client import messages
 
 def usage():
     print "python test_soak_server_split_params.py --server=127.0.0.1 --port=5000 --nclients=5 --nreps=1 --nsplits=2"
