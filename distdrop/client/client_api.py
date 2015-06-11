@@ -3,7 +3,7 @@ import socket
 import time
 import re
 
-from distdrop.client.client_api import ClientCNNAutoSplitter
+#from distdrop.client.client_api import ClientCNNAutoSplitter
 from distdrop.client.messages import *
 
 from distdrop.client.client_side_dropout import build_hierarchy, build_dropout_index
@@ -111,13 +111,12 @@ class ClientCNNAutoSplitter(Client):
     # certain configurations make sense.
     def __init__(self,  server_host, port,
                         alpha, beta,
-                        duchi_decay,
                         want_delta_updates):
 
         super(ClientCNNAutoSplitter, self).__init__(server_host, port)
 
         # indexed by root_name, just like the splits themselves.
-        # The timestamps are for the duchi scaling (optional).
+        # The timestamps are for the duchi scaling (no longer supported).
         self.splits_indices = {}
 
         self.splits_timestamp_pull = {}
@@ -142,7 +141,6 @@ class ClientCNNAutoSplitter(Client):
 
         self.alpha = alpha
         self.beta = beta
-        self.duchi_decay = duchi_decay        
         self.want_delta_updates = want_delta_updates        
 
 
@@ -152,48 +150,19 @@ class ClientCNNAutoSplitter(Client):
         assert beta is not None
         return cls( server_host, port,
                     alpha=alpha, beta=beta,
-                    duchi_decay=None,
                     want_delta_updates=False)
 
-    @classmethod
-    def new_basic_duchi_decay(cls, server_host, port, duchi_decay, beta=None):
-        return cls( server_host, port,
-                    alpha=None, beta=beta,
-                    duchi_decay=duchi_decay,
-                    want_delta_updates=False )
 
-    # def read_param_desc_from_server(self):
-    
-    #     # this function populates 
-    #     #     self.L_param_desc
-    #     #     self.L_layer_names
-    
-    #     super(ClientCNNAutoSplitter, self).read_param_desc_from_server()
-    
-    #     layer_name_by_number = {}
-    #     for param_desc in self.L_param_desc:
-    
-    #         (layer_name, layer_number, role) = ClientCNNAutoSplitter.analyze_param_name(param_desc["name"])
-    
-    #         if layer_name_by_number.has_key(layer_number):
-    #             assert layer_name_by_number[layer_number] == layer_name
-    #         else:
-    #             layer_name_by_number[layer_number] = layer_name
-    
-    #     self.L_layer_names = []
-    #     for k in sorted(layer_name_by_number.keys()):
-    #         self.L_layer_names.append(layer_name_by_number[k])
-
-    @staticmethod
-    def splice_dropout_weights_to_L_param_desc(
-        L_param_desc_with_maybe_dropout_probs,
-        D_dropout_probs):
-        # mutates the values in L_param_desc_with_dropout_probs
-
-        for param_desc in L_param_desc_with_maybe_dropout_probs:
-            (layer_name, layer_number, role) = ClientCNNAutoSplitter.analyze_param_name(param_desc["name"])
-            dropout_probs = D_dropout_probs[layer_name]
-            param_desc['dropout_probs'] = dropout_probs
+    #@staticmethod
+    #def splice_dropout_weights_to_L_param_desc(
+    #    L_param_desc_with_maybe_dropout_probs,
+    #    D_dropout_probs):
+    #    # mutates the values in L_param_desc_with_dropout_probs
+    #
+    #    for param_desc in L_param_desc_with_maybe_dropout_probs:
+    #        (layer_name, layer_number, role) = ClientCNNAutoSplitter.analyze_param_name(param_desc["name"])
+    #        dropout_probs = D_dropout_probs[layer_name]
+    #        param_desc['dropout_probs'] = dropout_probs
 
     @staticmethod
     def analyze_param_name(name):
@@ -205,25 +174,28 @@ class ClientCNNAutoSplitter(Client):
             print "Failed to get layer number from %s." % name
             return None
 
-    def perform_split(self, D_dropout_probs):
+    def perform_split(self, D_dropout_prob_pairs, L_extra_suffixes=[]):
 
-        # D_dropout_probs is a dict with keys being layer names (e.g. "layer_0" and "layer_17")
-        # and the values are pairs of real numbers in [0,1] indicating how much
-        # we want to drop out. zero means we keep everything. one means we drop all.
+        # D_dropout_prob_pairs is a dict with keys being layer names (e.g. "layer_0" and "layer_17").
+        # The values are pairs of real numbers in [0.0,1.0]
+        # indicating how much we want to drop out.
+        #    zero means we keep everything.
+        #    one means we drop all.
+
+        # L_extra_suffixes is optional, and it contains things such as
+        # "momentum" and "decay".
+        # This means that we'll generate the appropriate splits for
+        # the variables named
+        #    ["layer_0_b_momentum", "layer_0_b_decay",
+        #     "layer_0_W_momentum", "layer_0_W_decay"]
 
         if self.L_param_desc is None:
             self.read_param_desc_from_server()
             assert self.L_param_desc is not None
 
-        #print "self.L_param_desc is"
-        #print self.L_param_desc
-
-        # mutates the first argument
-        ClientCNNAutoSplitter.splice_dropout_weights_to_L_param_desc(
-            self.L_param_desc,
-            D_dropout_probs)
-
-        self.splits_indices = build_dropout_index(build_hierarchy(self.L_param_desc))
+        self.splits_indices = sample_dropout_indices.sample_dropout_indices(self.L_params,
+                                                                            D_dropout_prob_pairs,
+                                                                            L_extra_suffixes)
 
     def pull_entire_param(self, name):
 
@@ -299,11 +271,6 @@ class ClientCNNAutoSplitter(Client):
         param_desc = self.get_param_desc(name)
         assert param_desc is not None
 
-        # debug
-        #if name == "layer_7_b":
-        #    print "push_split_param layer_7_b :"
-        #    print updated_value.reshape((-1,))
-
 
         S = (len(indices[0]), len(indices[1]))
         D = (param_desc['shape'][0], param_desc['shape'][1])
@@ -313,42 +280,6 @@ class ClientCNNAutoSplitter(Client):
 
         self.splits_timestamp_push[name] = time.time()
 
-        # Now we need to identify what the (alpha, beta) are supposed to be.
-
-        if self.duchi_decay is not None:
-
-            # duchi_decay = 0.0 is equivalent to (alpha=0.0, beta=0.0).
-            # duchi_decay is the time (in milliseconds) that it takes to get a "half-life"
-            #    beta  <- beta/2.0
-            #    alpha <- 1 - beta
-
-            # So we'll have that
-            # beta = 1.0 * (0.5)^( time_elapsed / duchi_decay )
-
-            # That being said, if self.beta is not None, then we might as well
-            # use it as as starting point from which the decay starts.
-            # That allows us to limit the contributions that might happen
-            # if we got a very small `time_elapsed`.
-            #
-            # Note also that this method isn't perfect because we're not even
-            # taking into consideration the time that it will take for the
-            # data to travel to the server.
-
-            time_elapsed = time.time() - self.splits_timestamp_pull[name]
-            beta = self.get_duchi_decay_beta(name, time_elapsed)
-            #beta = self.beta * np.exp((time_elapsed / duchi_decay)*np.log(0.5))
-            alpha = 1.0-beta
-
-        elif self.alpha is not None and self.beta is not None:
-            (alpha, beta) = (self.alpha, self.beta)
-
-        else:
-            raise Exception("We can't figure out which values of (alpha, beta) to use.")
-
-        # TODO :
-        # if self.want_delta_updates ... not implemented yet
-
-
         # Then we sent the updates to the server here.
         self.update_param_slice_to_server(updated_value,
             alpha, beta,
@@ -356,27 +287,10 @@ class ClientCNNAutoSplitter(Client):
             S, D, indices,
             dtype_for_client)
 
-        #print "called push_split_param with (alpha, beta) being (%f, %f)" % (alpha, beta)
-
-        self.total_time_spent_pushing = self.total_time_spent_pushing + (time.time() - self.splits_timestamp_push[name])
+        #self.total_time_spent_pushing = self.total_time_spent_pushing + (time.time() - self.splits_timestamp_push[name])
 
         # We're done. Nothing to return.
         return
-
-
-    # You can call this function to help you determine
-    # when you should push your updates.
-    def get_duchi_decay_beta(self, name, time_elapsed):
-
-        assert 0.0 <= time_elapsed
-
-        beta = np.exp((time_elapsed / self.duchi_decay)*np.log(0.5))
-        if self.beta is not None:
-            beta = beta * self.beta
-
-        #alpha = 1.0-beta
-
-        return beta
 
 
 
