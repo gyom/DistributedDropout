@@ -6,7 +6,7 @@ import re
 #from distdrop.client.client_api import ClientCNNAutoSplitter
 from distdrop.client.messages import *
 
-from distdrop.client.client_side_dropout import build_hierarchy, build_dropout_index
+from distdrop.client.sample_dropout_indices import sample_dropout_indices
 
 class Client(object):
 

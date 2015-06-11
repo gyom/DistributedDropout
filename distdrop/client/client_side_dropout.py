@@ -31,7 +31,7 @@ def build_hierarchy(list_of_params):
 
     def analyze_param_name(name):
         prog = re.compile(r"(layer_(\d+))_([^_]*)(_(.*)){0,1}")
-        m = prog.match(s)
+        m = prog.match(name)
         if m:
             layer_name = m.group(1)
             layer_number = int(m.group(2))
@@ -39,7 +39,7 @@ def build_hierarchy(list_of_params):
             param_extra = m.group(5)
             return (layer_name, layer_number, role, param_extra)
         else:
-            print "Failed to get layer number from %d." % name
+            print "Failed to get layer number from %s." % name
             return None
 
     layers = set()
@@ -76,12 +76,11 @@ def build_hierarchy(list_of_params):
             shapes[layer_name] = {}
 
         if param_extra not in L_extra:
-            L_extra.append(param_extra)
+            if param_extra is not None:
+                L_extra.append(param_extra)
 
-        """
-        assert role in ["W", "W_momentum", "b", "b_momentum"]
         shapes[layer_name][role] = param_desc["shape"]
-        """
+
     
     full_dict = {}
     full_dict["nbr_layers"] = len(layers)
