@@ -128,7 +128,7 @@ def sample_dropout_indices(L_params, D_dropout_prob_pairs):
         if rough_kinds[layer_name] == "FULLY_CONNECTED":
             splits_for_b[layer_name] = [just_the_zero_index, splits_for_W[layer_name][1]]
         elif rough_kinds[layer_name] == "CONV_FILTER":
-            splits_for_b[layer_name] = [splits_for_W[layer_name][0], just_the_zero_index]]
+            splits_for_b[layer_name] = [splits_for_W[layer_name][0], just_the_zero_index]
         else:
             raise Exception("bug !")
 
