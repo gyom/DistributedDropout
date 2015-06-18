@@ -191,8 +191,8 @@ class ClientCNNAutoSplitter(Client):
             self.read_param_desc_from_server()
             assert self.L_param_desc is not None
 
-        self.splits_indices = sample_dropout_indices.sample_dropout_indices(self.L_params,
-                                                                            D_dropout_prob_pairs)
+        self.splits_indices = sample_dropout_indices(self.L_param_desc,
+                                                     D_dropout_prob_pairs)
 
     def pull_entire_param(self, name):
 
@@ -223,7 +223,7 @@ class ClientCNNAutoSplitter(Client):
         updated_value = updated_value.astype(np.float32)
 
         self.update_param_slice_to_server(updated_value,
-            alpha, beta,
+            self.alpha, self.beta,
             name,
             D, D, indices,
             dtype_for_client)
@@ -279,7 +279,7 @@ class ClientCNNAutoSplitter(Client):
 
         # Then we sent the updates to the server here.
         self.update_param_slice_to_server(updated_value,
-            alpha, beta,
+            self.alpha, self.beta,
             name,
             S, D, indices,
             dtype_for_client)

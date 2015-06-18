@@ -52,44 +52,44 @@ def analyze_param_name(name):
         return None
 
 
-def sample_dropout_indices(L_params, D_dropout_prob_pairs):
+def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
 
     # identify all the parameters that represent
     # parameters instead of parameter+suffix
 
-    L_params_root_variables_W = []
-    L_params_root_variables_b = []
+    L_params_desc_root_variables_W = []
+    L_params_desc_root_variables_b = []
 
-    for e in L_params:
-        (layer_name, layer_number, role, param_extra) = analyze_param_name(e.name)
+    for e in L_params_desc:
+        (layer_name, layer_number, role, param_extra) = analyze_param_name(e['name'])
         if param_extra is not None:
-            #L_params_extra_variables.append(e)
+            #L_params_desc_extra_variables.append(e)
             pass
         elif role == 'W':
-            L_params_root_variables_W.append(e)
+            L_params_desc_root_variables_W.append(e)
         elif role == 'b':
-            L_params_root_variables_b.append(e)
+            L_params_desc_root_variables_b.append(e)
         else:
             raise Exception("bug !")
 
     splits_for_W = {}
     rough_kinds = {}
     # splits_for_W is indexed by keys like r"layer_\d_W"
-    for e in L_params_root_variables_W:
-        (layer_name, _, _, _) = analyze_param_name(e.name)
-        splits_for_W[e.name] = get_single_dropout_indices(e.shape, D_dropout_prob_pairs[layer_name])
+    for e in L_params_desc_root_variables_W:
+        (layer_name, _, _, _) = analyze_param_name(e['name'])
+        splits_for_W[layer_name] = get_single_dropout_indices(e['shape'], D_dropout_prob_pairs[layer_name])
         rough_kinds[layer_name] = proj_rough_kind(e["kind"])
 
 
     # sort by layer_number, just in case that wasn't already the case
-    L_params_root_variables_W.sort(key=lambda e: analyze_param_name(e.name)[1])
+    L_params_desc_root_variables_W.sort(key=lambda e: analyze_param_name(e['name'])[1])
 
 
     # making two consecutive layers agree on the splits for "W"
-    for (e, e_next) in zip(L_params_root_variables_W, L_params_root_variables_W[1:]):
+    for (e, e_next) in zip(L_params_desc_root_variables_W, L_params_desc_root_variables_W[1:]):
         
-        (layer_name, _, _, _) = analyze_param_name(e.name)
-        (layer_name_next, _, _, _) = analyze_param_name(e_next.name)
+        (layer_name, _, _, _) = analyze_param_name(e['name'])
+        (layer_name_next, _, _, _) = analyze_param_name(e_next['name'])
 
         # 1 FULLY_CONNECTED -> FULLY_CONNECTED
         if (rough_kinds[layer_name_next] == "FULLY_CONNECTED" and 
@@ -105,8 +105,8 @@ def sample_dropout_indices(L_params, D_dropout_prob_pairs):
         if (rough_kinds[layer_name_next] == "FULLY_CONNECTED" and 
             rough_kinds[layer_name] == "CONV_FILTER"):
 
-            shape_input = e.shape[1]
-            shape_output = e_next.shape[0]
+            shape_input = e['shape'][1]
+            shape_output = e_next['shape'][0]
             c = shape_output/shape_input
             splits_for_W[layer_name_next][0] = np.concatenate(
                                         [np.arange(index*c, (index+1)*c)
@@ -122,8 +122,8 @@ def sample_dropout_indices(L_params, D_dropout_prob_pairs):
 
     splits_for_b = {}
     just_the_zero_index = np.array([0], dtype=np.intc)
-    for eb in L_param_root_variables_b:
-        (layer_name, _, _, _) = analyze_param_name(eb.name)
+    for eb in L_params_desc_root_variables_b:
+        (layer_name, _, _, _) = analyze_param_name(eb['name'])
 
         if rough_kinds[layer_name] == "FULLY_CONNECTED":
             splits_for_b[layer_name] = [just_the_zero_index, splits_for_W[layer_name][1]]
@@ -136,12 +136,12 @@ def sample_dropout_indices(L_params, D_dropout_prob_pairs):
     # that's indexed by the full names (ex : "layer_0_b_momentum") instead
     # of by the layer_name (ex : "layer_0")
     splits_indices = {}
-    for e in L_params:
-        (layer_name, _, role, _) = analyze_param_name(e.name)
+    for e in L_params_desc:
+        (layer_name, _, role, _) = analyze_param_name(e['name'])
         if role == "W":
-            splits_indices[e.name] = splits_for_W[layer_name]
+            splits_indices[e['name']] = splits_for_W[layer_name]
         elif role == "b":
-            splits_indices[e.name] = splits_for_b[layer_name]
+            splits_indices[e['name']] = splits_for_b[layer_name]
         else:
             raise Exception("bug !")
 

@@ -6,7 +6,7 @@ import re
 
 import numpy as np
 
-from client_api import ClientCNNAutoSplitter
+from distdrop.client.client_api import ClientCNNAutoSplitter
 
 def usage():
     print "python auto_init_server_params.py --server=127.0.0.1 --port=8200 --W_range=0.1 --b_range=0.1 --want_zero_momentum --use_fanin"
