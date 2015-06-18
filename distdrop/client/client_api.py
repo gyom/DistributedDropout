@@ -174,7 +174,7 @@ class ClientCNNAutoSplitter(Client):
             print "Failed to get layer number from %s." % name
             return None
 
-    def perform_split(self, D_dropout_prob_pairs, L_extra_suffixes=[]):
+    def perform_split(self, D_dropout_prob_pairs):
 
         # D_dropout_prob_pairs is a dict with keys being layer names (e.g. "layer_0" and "layer_17").
         # The values are pairs of real numbers in [0.0,1.0]
@@ -182,10 +182,8 @@ class ClientCNNAutoSplitter(Client):
         #    zero means we keep everything.
         #    one means we drop all.
 
-        # L_extra_suffixes is optional, and it contains things such as
-        # "momentum" and "decay".
-        # This means that we'll generate the appropriate splits for
-        # the variables named
+        # This will generate the appropriate splits for
+        # the variables with names having suffixes too.
         #    ["layer_0_b_momentum", "layer_0_b_decay",
         #     "layer_0_W_momentum", "layer_0_W_decay"]
 
@@ -194,8 +192,7 @@ class ClientCNNAutoSplitter(Client):
             assert self.L_param_desc is not None
 
         self.splits_indices = sample_dropout_indices.sample_dropout_indices(self.L_params,
-                                                                            D_dropout_prob_pairs,
-                                                                            L_extra_suffixes)
+                                                                            D_dropout_prob_pairs)
 
     def pull_entire_param(self, name):
 
