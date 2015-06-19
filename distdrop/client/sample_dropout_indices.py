@@ -15,10 +15,13 @@ def get_single_dropout_indices(shape, dropout_prob_pair):
                                                             
     # check for cases where we want no dropout
 
-    if dropout_prob_pair[0] == 0.0:                               
+    if dropout_prob_pair[0] == 0.0:
+
+
         index_row = np.arange(shape[0])
+
     else:
-        (N, p) = (shape[0], dropout_probs[0])
+        (N, p) = (shape[0], dropout_prob_pair[0])
         N_kept = N-int(N*p)
         index_row = np.sort(np.random.permutation(N)[:N_kept])
         assert len(index_row) == N_kept
@@ -77,8 +80,17 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
     # splits_for_W is indexed by keys like r"layer_\d_W"
     for e in L_params_desc_root_variables_W:
         (layer_name, _, _, _) = analyze_param_name(e['name'])
-        splits_for_W[layer_name] = get_single_dropout_indices(e['shape'], D_dropout_prob_pairs[layer_name])
         rough_kinds[layer_name] = proj_rough_kind(e["kind"])
+        # this is because the `get_single_dropout_indices` does not
+        # want to know what kind of kind of parameter it's dealing with,
+        # but it needs to know which indices are the input and the output
+        if rough_kinds[layer_name] == "CONV_FILTER":
+            [index_col, index_row] = get_single_dropout_indices([e['shape'][1], e['shape'][0]], D_dropout_prob_pairs[layer_name])
+            splits_for_W[layer_name] = [index_row, index_col]
+        elif rough_kinds[layer_name] == "FULLY_CONNECTED":
+            splits_for_W[layer_name] = get_single_dropout_indices([e['shape'][0], e['shape'][1]], D_dropout_prob_pairs[layer_name])
+        else:
+            raise Exception("bug !")
 
 
     # sort by layer_number, just in case that wasn't already the case

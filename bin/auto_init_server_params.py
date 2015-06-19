@@ -41,7 +41,13 @@ def run(server, port, W_range, b_range, want_zero_momentum, use_fanin):
         else:
             raise Exception("You got a parameter %s with an invalid kind : %s" % (name, param['kind']))
 
-        if re.match(r".*momentum", name) and want_zero_momentum:
+        if (re.match(r".*momentum", name) or 
+            re.match(r".*decay", name) or 
+            re.match(r".*ssq", name) or 
+            re.match(r".*mean", name) or 
+            re.match(r".*var", name) or 
+            re.match(r".*tm1", name) or 
+            re.match(r".*xtm1", name)) and want_zero_momentum:
             #print "momentum detected %s and want zero momentum" % name
             scale = 0.0
         
