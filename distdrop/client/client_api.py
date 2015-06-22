@@ -10,6 +10,18 @@ from distdrop.client.sample_dropout_indices import sample_dropout_indices
 
 class Client(object):
 
+    # For the time being, we are not interested in having
+    # the client be pickled in any way.
+
+    # Also, we could use this to write down the timestamps at
+    # which we synchronized with the server.
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self):
+        return None
+
     def __init__(self, server_host, port):
         super(Client, self).__init__()
 
