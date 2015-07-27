@@ -96,6 +96,11 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
     # sort by layer_number, just in case that wasn't already the case
     L_params_desc_root_variables_W.sort(key=lambda e: analyze_param_name(e['name'])[1])
 
+    
+    #print "BEFORE HARMONIZATION."
+    #for (k,v) in sorted(splits_for_W.items()):
+    #    print "splits_for_W[%s] has shapes : [%s, %s]" % (k, v[0].shape, v[1].shape)
+
 
     # making two consecutive layers agree on the splits for "W"
     for (e, e_next) in zip(L_params_desc_root_variables_W, L_params_desc_root_variables_W[1:]):
@@ -117,11 +122,14 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
         if (rough_kinds[layer_name_next] == "FULLY_CONNECTED" and 
             rough_kinds[layer_name] == "CONV_FILTER"):
 
+            # Note : This has gotten dangerous.
+            #        I no longer understand what's happening here.
+            #        Verify this.
             shape_input = e['shape'][1]
             shape_output = e_next['shape'][0]
-            c = shape_output/shape_input
+            c = 1.0*shape_output/shape_input
             splits_for_W[layer_name_next][0] = np.concatenate(
-                                        [np.arange(index*c, (index+1)*c)
+                                        [np.arange(int(index*c), int((index+1)*c))
                                             for index in splits_for_W[layer_name][1]],
                                         axis=0).astype(np.intc)
 
@@ -129,6 +137,12 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
             rough_kinds[layer_name] == "FULLY_CONNECTED"):
 
             raise Exception("FULLY_CONNECTED ->CONV_FILTER not implemented")
+
+
+    #print "AFTER HARMONIZATION."
+    #for (k,v) in sorted(splits_for_W.items()):
+    #    print "splits_for_W[%s] has shapes : [%s, %s]" % (k, v[0].shape, v[1].shape)
+
 
     # assign the matching splits for "b" corresponding to the splits on "W"
 
