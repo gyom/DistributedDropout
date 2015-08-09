@@ -122,21 +122,34 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
         if (rough_kinds[layer_name_next] == "FULLY_CONNECTED" and 
             rough_kinds[layer_name] == "CONV_FILTER"):
 
-            # Note : This has gotten dangerous.
-            #        I no longer understand what's happening here.
-            #        Verify this.
             shape_input = e['shape'][1]
+            # I'm no longer sure about the current implementation.
+            # I'm losing track of what's the convention for the dimensions.
+            #shape_input = e['shape'][0]
             shape_output = e_next['shape'][0]
-            c = 1.0*shape_output/shape_input
+            c = shape_output/shape_input
+
+            if c * shape_input != shape_output:
+                print "You have a problem with your configuration of dropout at the junction of the convolution and fully-connected layers."
+                print "You have %d filters (%d, %d) coming out of the convolution," % (shape_input, e['shape'][2], e['shape'][3])
+                print "but you then have %d units at the entrance to the fully-connected section." % shape_output
+                raise Exception("Setup for split indices at CONV_FILTER -> FULLY_CONNECTED cannot proceed.")
+
+            # Basically, here we're taking chunks of indices [0,1,2,3] and [8,9,10,11]
+            # that correspond to filters of size (2,2), for example.
+            # This is a bit tricky, and there are multiple ways that we could implement this.
+
             splits_for_W[layer_name_next][0] = np.concatenate(
                                         [np.arange(int(index*c), int((index+1)*c))
                                             for index in splits_for_W[layer_name][1]],
                                         axis=0).astype(np.intc)
 
+            #import pdb; pdb.set_trace()
+
         if (rough_kinds[layer_name_next] == "CONV_FILTER" and 
             rough_kinds[layer_name] == "FULLY_CONNECTED"):
 
-            raise Exception("FULLY_CONNECTED ->CONV_FILTER not implemented")
+            raise Exception("FULLY_CONNECTED -> CONV_FILTER not implemented")
 
 
     #print "AFTER HARMONIZATION."
