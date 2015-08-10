@@ -122,10 +122,23 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
         if (rough_kinds[layer_name_next] == "FULLY_CONNECTED" and 
             rough_kinds[layer_name] == "CONV_FILTER"):
 
-            shape_input = e['shape'][1]
-            # I'm no longer sure about the current implementation.
-            # I'm losing track of what's the convention for the dimensions.
-            #shape_input = e['shape'][0]
+            
+            # Be VERY careful about this section.
+            # The convolution layers have shape (OUT, IN, H, W).
+            # The fully-connected layers have shape (IN, OUT, 1, 1).
+            # This means that you want e['shape'][0] to match with e_next['shape'][0].
+            # You are matching OUT -> IN.
+            #
+            # Older versions of this section had
+            # #shape_input = e['shape'][1]
+            # but this is not correct.
+            # Also, older versions used 
+            # # np.concatenate([np.arange(int(index*c), int((index+1)*c))
+            #                            for index in splits_for_W[layer_name][1]],
+            #                            axis=0).astype(np.intc)
+            # which is also wrong.
+
+            shape_input = e['shape'][0]
             shape_output = e_next['shape'][0]
             c = shape_output/shape_input
 
@@ -133,6 +146,10 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
                 print "You have a problem with your configuration of dropout at the junction of the convolution and fully-connected layers."
                 print "You have %d filters (%d, %d) coming out of the convolution," % (shape_input, e['shape'][2], e['shape'][3])
                 print "but you then have %d units at the entrance to the fully-connected section." % shape_output
+                print ""
+                print "e['shape'] : %s" % str(e['shape'])
+                print "e_next['shape'] : %s" % str(e_next['shape'])
+                print ""
                 raise Exception("Setup for split indices at CONV_FILTER -> FULLY_CONNECTED cannot proceed.")
 
             # Basically, here we're taking chunks of indices [0,1,2,3] and [8,9,10,11]
@@ -141,7 +158,7 @@ def sample_dropout_indices(L_params_desc, D_dropout_prob_pairs):
 
             splits_for_W[layer_name_next][0] = np.concatenate(
                                         [np.arange(int(index*c), int((index+1)*c))
-                                            for index in splits_for_W[layer_name][1]],
+                                            for index in splits_for_W[layer_name][0]],
                                         axis=0).astype(np.intc)
 
             #import pdb; pdb.set_trace()
